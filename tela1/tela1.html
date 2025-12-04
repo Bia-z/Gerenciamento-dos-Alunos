@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerenciamento de Alunos</title>
+    <link rel="stylesheet" href="tela1.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- CABEÇALHO -->
+        <header>
+            <h1><i class="fas fa-user-graduate"></i> Gerenciamento de Alunos</h1>
+            <p class="subtitle">Controle de alunos, classes e degrees</p>
+        </header>
+
+        <!-- FILTROS -->
+        <div class="filtros">
+            <h2><i class="fas fa-filter"></i> Filtros</h2>
+            <div class="filtros-container">
+                <!-- Nome do aluno -->
+                <div class="filtro-group">
+                    <label for="nameFilter">
+                        <i class="fas fa-user"></i> Nome do aluno:
+                    </label>
+                    <input type="text" id="nameFilter" placeholder="Digite o nome..." class="filtro-input">
+                </div>
+                
+                <!-- Classes -->
+                <div class="filtro-group">
+                    <label for="classFilter">
+                        <i class="fas fa-users"></i> Classes:
+                    </label>
+                    <select id="classFilter" class="filtro-select">
+                        <option value="">Todas as Classes</option>
+                        <option value="1">A</option>
+                        <option value="2">B</option>
+                        <option value="3">C</option>
+                        <option value="4">D</option>
+                        <option value="5">E</option>
+                        <option value="6">F</option>
+                    </select>
+                </div>
+                
+                <!-- Degrees -->
+                <div class="filtro-group">
+                    <label for="degreeFilter">
+                        <i class="fas fa-graduation-cap"></i> Degrees:
+                    </label>
+                    <select id="degreeFilter" class="filtro-select">
+                        <option value="">Todos os Degrees</option>
+                        <option value="1">Ensino Fundamental</option>
+                        <option value="2">Ensino Médio</option>
+                        <option value="3">Cursinho</option>
+                        <option value="4">Estuda em Casa</option>
+                        <option value="5">Outros</option>
+                    </select>
+                </div>
+                
+                <!-- Botões -->
+                <button id="btnFiltrar" class="filtro-btn">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+                <button id="btnLimpar" class="filtro-btn limpar">
+                    <i class="fas fa-eraser"></i> Limpar
+                </button>
+            </div>
+        </div>
+
+        <!-- GERAR ALUNOS -->
+        <div class="geracao">
+            <div class="geracao-header">
+                <h3><i class="fas fa-plus-circle"></i> Gerar Novos Alunos</h3>
+                <div class="stats">
+                    <div class="stat-item">
+                        <i class="fas fa-users"></i> Total de alunos: <span id="totalAlunos">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="generateStudents" class="generate-btn">
+                <i class="fas fa-magic"></i> Gerar 300 Novos Alunos Aleatórios
+            </button>
+            
+            <!-- GRÁFICO -->
+            <div class="chart-section">
+                <h4><i class="fas fa-chart-bar"></i> Distribuição de Alunos por Degree</h4>
+                <div class="chart-container">
+                    <canvas id="studentsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- LISTA DE ALUNOS -->
+        <div class="tabela-container">
+            <div class="tabela-header">
+                <h3><i class="fas fa-list"></i> Lista de Alunos</h3>
+                <div class="tabela-info">
+                    <div class="info-item">
+                        <i class="fas fa-eye"></i> Mostrando: 
+                        <span id="filteredCount">0</span> de <span id="totalCount">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- TABELA -->
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>RA</th>
+                            <th>Nome Completo</th>
+                            <th>Degree</th>
+                            <th>Class</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Os alunos aparecerão aqui -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- MENSAGEM QUANDO NÃO HÁ ALUNOS -->
+            <div class="empty-state" id="emptyState">
+                <i class="fas fa-user-graduate fa-3x"></i>
+                <h4>Nenhum aluno encontrado</h4>
+                <p>Use os filtros ou gere novos alunos</p>
+                <button id="btnGerarPrimeiros" class="empty-btn">
+                    <i class="fas fa-magic"></i> Gerar Primeiros Alunos
+                </button>
+            </div>
+        </div>
+        
+        <!-- RODAPÉ -->
+        <footer>
+            <p>Sistema de Gerenciamento de Alunos &copy; 2024</p>
+        </footer>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app1.js"></script>
+</body>
+</html>

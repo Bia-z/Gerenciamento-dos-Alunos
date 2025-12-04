@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerenciamento de Professores</title>
+    <link rel="stylesheet" href="tela2.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- CABEÇALHO -->
+        <header>
+            <h1><i class="fas fa-chalkboard-teacher"></i> Gerenciamento de Professores</h1>
+            <p class="subtitle">Controle de professores, matérias e suas relações</p>
+        </header>
+
+        <!-- PARTE 1: LISTA DE PROFESSORES -->
+        <section class="secao">
+            <h2><i class="fas fa-list"></i> Lista de Professores e Relacionamentos</h2>
+            
+            <!-- FILTROS -->
+            <div class="filtros">
+                <div class="filtros-container">
+                    <div class="filtro-group">
+                        <label for="filtroDegree"><i class="fas fa-graduation-cap"></i> Degree:</label>
+                        <select id="filtroDegree" class="filtro-select">
+                            <option value="">Todos os Degrees</option>
+                            <!-- Preenchido por JS -->
+                        </select>
+                    </div>
+                    
+                    <div class="filtro-group">
+                        <label for="filtroClass"><i class="fas fa-users"></i> Classe:</label>
+                        <select id="filtroClass" class="filtro-select">
+                            <option value="">Todas as Classes</option>
+                            <!-- Preenchido por JS -->
+                        </select>
+                    </div>
+                    
+                    <div class="filtro-group">
+                        <label for="filtroTeacher"><i class="fas fa-user-tie"></i> Professor:</label>
+                        <select id="filtroTeacher" class="filtro-select">
+                            <option value="">Todos os Professores</option>
+                            <!-- Preenchido por JS -->
+                        </select>
+                    </div>
+                    
+                    <button id="btnFiltrar" class="filtro-btn">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                    
+                    <button id="btnLimpar" class="filtro-btn limpar">
+                        <i class="fas fa-eraser"></i> Limpar
+                    </button>
+                </div>
+            </div>
+
+            <!-- TABELA DE RELACIONAMENTOS -->
+            <div class="tabela-container">
+                <div class="tabela-header">
+                    <h3><i class="fas fa-table"></i> Relacionamentos</h3>
+                    <div class="tabela-info">
+                        <div class="info-item">
+                            <i class="fas fa-project-diagram"></i> Relacionamentos: <span id="totalRelacionamentos">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-wrapper">
+                    <table id="tabelaRelacionamentos">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Professor</th>
+                                <th>Matéria</th>
+                                <th>Degrees</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabela">
+                            <!-- Preenchido por JS -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="empty-state" id="emptyStateRelacionamentos">
+                    <i class="fas fa-chalkboard-teacher fa-3x"></i>
+                    <h4>Nenhum relacionamento encontrado</h4>
+                    <p>Crie um novo relacionamento usando o formulário abaixo</p>
+                </div>
+            </div>
+            
+            <!-- MODAL PARA ALUNOS -->
+            <div id="modalAlunos" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-users"></i> Alunos Relacionados</h3>
+                        <button class="close-modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Degree: <strong id="modalDegreeNome"></strong></p>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nome</th>
+                                        <th>RA</th>
+                                        <th>Classe</th>
+                                        <th>Degree</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="modalAlunosLista">
+                                    <!-- Alunos aparecem aqui -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PARTE 2: FORMULÁRIO NOVO RELACIONAMENTO -->
+        <section class="secao formulario-secao">
+            <h2><i class="fas fa-plus-circle"></i> Novo Relacionamento</h2>
+            
+            <form id="formNovoRelacionamento" class="form-container">
+                <div class="form-grid">
+                    <!-- PROFESSOR -->
+                    <div class="form-group">
+                        <label for="selectProfessor"><i class="fas fa-user-tie"></i> Professor *</label>
+                        <select id="selectProfessor" class="form-select" required>
+                            <option value="">Selecione um professor</option>
+                            <!-- Preenchido por JS -->
+                        </select>
+                    </div>
+                    
+                    <!-- MATÉRIA -->
+                    <div class="form-group">
+                        <label for="selectMateria"><i class="fas fa-book"></i> Matéria *</label>
+                        <select id="selectMateria" class="form-select" required>
+                            <option value="">Selecione uma matéria</option>
+                            <!-- Preenchido por JS -->
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- DEGREES E CLASSES (dinâmico) -->
+                <div class="form-section">
+                    <h4><i class="fas fa-graduation-cap"></i> Degrees e Classes Relacionadas</h4>
+                    <div id="degreesContainer" class="degrees-container">
+                        <!-- Degrees serão adicionados dinamicamente -->
+                        <!-- O primeiro degree é adicionado automaticamente -->
+                    </div>
+                    
+                    <button type="button" id="btnAddDegree" class="btn-add">
+                        <i class="fas fa-plus"></i> Adicionar Degree
+                    </button>
+                </div>
+                
+                <!-- BOTÕES DO FORMULÁRIO -->
+                <div class="form-botoes">
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-save"></i> Salvar Relacionamento
+                    </button>
+                    <button type="button" id="btnLimparForm" class="btn-limpar">
+                        <i class="fas fa-eraser"></i> Limpar Formulário
+                    </button>
+                </div>
+            </form>
+        </section>
+        
+        <!-- RODAPÉ -->
+        <footer>
+            <p>Sistema de Gerenciamento de Professores &copy; 2024</p>
+        </footer>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="app2.js"></script>
+</body>
+</html>
