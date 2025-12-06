@@ -8,38 +8,6 @@ let classes = [];
 let relacionamentos = [];
 let alunos = [];
 
-// ===== MAPEAMENTO DE DEGREES =====
-// Mapeamento de degrees antigos para os 5 simplificados
-const MAPEAMENTO_DEGREES = {
-    // Ensino Fundamental (id: 1)
-    1: 1,   // Ensino Fundamental
-    8: 1,   // 4º ano do ensino fundamental
-    9: 1,   // 5º ano do ensino fundamental
-    10: 1,  // 6º ano do ensino fundamental
-    11: 1,  // 7º ano do ensino fundamental
-    12: 1,  // 8º ano do ensino fundamental
-    13: 1,  // 9º ano do ensino fundamental
-    
-    // Ensino Médio (id: 2)
-    2: 2,   // 1° ano do ensino médio
-    3: 2,   // 2° ano ensino médio
-    4: 2,   // 3° ano do ensino médio
-    
-    // Cursinho (id: 3)
-    5: 3,   // Cursinho
-    
-    // Estuda em Casa (id: 4)
-    6: 4,   // Estudo em casa
-    
-    // Outros (id: 5)
-    7: 5    // Outros
-};
-
-// Função para converter degreeId para formato simplificado
-function converterDegreeParaSimplificado(degreeId) {
-    return MAPEAMENTO_DEGREES[degreeId] || degreeId;
-}
-
 // ===== ELEMENTOS DOM =====
 const elementos = {
     // Filtros
@@ -149,15 +117,10 @@ async function carregarTodosDados() {
         materias = await respMaterias.json();
         console.log(`📚 ${materias.length} matérias carregadas`);
         
-        // Degrees simplificados (5 categorias)
-        degrees = [
-            { id: 1, name: "Ensino Fundamental" },
-            { id: 2, name: "Ensino Médio" },
-            { id: 3, name: "Cursinho" },
-            { id: 4, name: "Estuda em Casa" },
-            { id: 5, name: "Outros" }
-        ];
-        console.log(`🎓 ${degrees.length} degrees configurados`);
+        // Carregar degrees COMPLETOS do arquivo JSON
+        const respDegrees = await fetch('../data/degrees.json');
+        degrees = await respDegrees.json();
+        console.log(`🎓 ${degrees.length} degrees carregados do JSON`);
         
         // Carregar classes
         const respClasses = await fetch('../data/classes.json');
@@ -175,9 +138,6 @@ async function carregarTodosDados() {
         alunos = await respAlunos.json();
         console.log(`👥 ${alunos.length} alunos carregados`);
         
-        // Converter degrees antigos para os novos
-        converterDegreesAntigos();
-        
         // Preencher filtros
         preencherFiltros();
         
@@ -187,32 +147,9 @@ async function carregarTodosDados() {
     }
 }
 
-/* ===== CONVERTER DEGREES ANTIGOS PARA OS 5 SIMPLIFICADOS ===== */
-function converterDegreesAntigos() {
-    // Converter degrees nos relacionamentos
-    relacionamentos.forEach(rel => {
-        rel.degrees?.forEach(degree => {
-            const novoId = MAPEAMENTO_DEGREES[degree.degreeId];
-            if (novoId) {
-                degree.degreeId = novoId;
-            }
-        });
-    });
-    
-    // Converter degrees nos alunos
-    alunos.forEach(aluno => {
-        const novoId = MAPEAMENTO_DEGREES[aluno.degreeId];
-        if (novoId) {
-            aluno.degreeId = novoId;
-        }
-    });
-    
-    console.log('✅ Degrees convertidos para formato simplificado');
-}
-
 /* ===== PREENCHER FILTROS ===== */
 function preencherFiltros() {
-    // Filtro de degrees
+    // Filtro de degrees - use todos do JSON
     if (elementos.filtroDegree) {
         elementos.filtroDegree.innerHTML = '<option value="">Todos os Degrees</option>' +
             degrees.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
@@ -302,7 +239,7 @@ function gerarDegreesHTML(degreesData) {
     }
     
     return degreesData.map(degreeItem => {
-        // Encontrar nome do degree
+        // Encontrar nome do degree ORIGINAL do JSON
         const degree = degrees.find(d => d.id === degreeItem.degreeId);
         const degreeNome = degree ? degree.name : `Degree ${degreeItem.degreeId}`;
         
@@ -368,20 +305,32 @@ function filtrarRelacionamentos() {
     });
 }
 
-/* ===== VER ALUNOS DO RELACIONAMENTO ===== */
+/* ===== VER ALUNOS DO RELACIONAMENTO (CORRIGIDO) ===== */
 function verAlunosDoRelacionamento(relacionamentoId) {
     const relacionamento = relacionamentos.find(r => r.id === relacionamentoId);
     if (!relacionamento) return;
     
-    // Coletar todos os degrees do relacionamento
-    const degreeIds = relacionamento.degrees?.map(d => d.degreeId) || [];
+    // Coletar todas as combinações de degreeId e classId do relacionamento
+    const combinacoes = [];
+    relacionamento.degrees?.forEach(degree => {
+        degree.classes?.forEach(classe => {
+            const classId = classe.classPosition || classe.classId || 1;
+            combinacoes.push({
+                degreeId: degree.degreeId,
+                classId: classId
+            });
+        });
+    });
     
-    // Encontrar alunos que estão em qualquer um desses degrees
-    const alunosRelacionados = alunos.filter(aluno => 
-        degreeIds.includes(aluno.degreeId)
-    );
+    // Encontrar alunos que estão em QUALQUER uma dessas combinações
+    const alunosRelacionados = alunos.filter(aluno => {
+        return combinacoes.some(combinacao => 
+            aluno.degreeId === combinacao.degreeId && 
+            aluno.classId === combinacao.classId
+        );
+    });
     
-    // Coletar nomes dos degrees
+    // Coletar nomes dos degrees ORIGINAIS
     const degreeNomes = relacionamento.degrees.map(d => {
         const degree = degrees.find(de => de.id === d.degreeId);
         return degree ? degree.name : `Degree ${d.degreeId}`;
@@ -398,7 +347,7 @@ function verAlunosDoRelacionamento(relacionamentoId) {
                 <tr>
                     <td colspan="5" style="text-align: center; padding: 40px; color: #718096;">
                         <i class="fas fa-user-slash fa-2x" style="margin-bottom: 15px;"></i>
-                        <p>Nenhum aluno encontrado para este(s) degree(s)</p>
+                        <p>Nenhum aluno encontrado para este(s) degree(s) e classe(s)</p>
                     </td>
                 </tr>
             `;
@@ -425,7 +374,29 @@ function verAlunosDoRelacionamento(relacionamentoId) {
     
     // Mostrar modal
     if (elementos.modalAlunos) {
+        abrirModal();
+        // Forçar o modal para o topo
+        elementos.modalAlunos.scrollTop = 0;
+    }
+}
+
+/* ===== ABRIR MODAL COM CONTROLE DE SCROLL ===== */
+function abrirModal() {
+    if (elementos.modalAlunos) {
         elementos.modalAlunos.style.display = 'flex';
+        document.body.classList.add('modal-aberto');
+        // Impedir scroll no body
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+/* ===== FECHAR MODAL COM CONTROLE DE SCROLL ===== */
+function fecharModal() {
+    if (elementos.modalAlunos) {
+        elementos.modalAlunos.style.display = 'none';
+        document.body.classList.remove('modal-aberto');
+        // Restaurar scroll no body
+        document.body.style.overflow = '';
     }
 }
 
@@ -454,7 +425,7 @@ function adicionarDegreeAoFormulario() {
     const degreeItem = document.createElement('div');
     degreeItem.className = 'degree-item';
     
-    // Gerar select de degrees
+    // Gerar select de degrees COM TODOS OS ORIGINAIS
     const degreeSelect = document.createElement('select');
     degreeSelect.className = 'degree-select';
     degreeSelect.innerHTML = '<option value="">Selecione um degree</option>' +
@@ -601,41 +572,277 @@ function salvarNovoRelacionamento(e) {
 /* ===== EDITAR RELACIONAMENTO ===== */
 function editarRelacionamento(id) {
     const relacionamento = relacionamentos.find(r => r.id === id);
-    if (!relacionamento) return;
-    
-    // Carregar dados no formulário
-    if (elementos.selectProfessor) {
-        elementos.selectProfessor.value = relacionamento.teacherId;
+    if (!relacionamento) {
+        mostrarNotificacao('Relacionamento não encontrado', 'error');
+        return;
     }
     
-    if (elementos.selectMateria) {
-        elementos.selectMateria.value = relacionamento.matterId;
+    // Encontrar professor
+    const professor = professores.find(p => p.id === relacionamento.teacherId);
+    if (!professor) {
+        mostrarNotificacao('Professor não encontrado', 'error');
+        return;
     }
     
-    // Limpar degrees container
-    if (elementos.degreesContainer) {
-        elementos.degreesContainer.innerHTML = '';
+    // Abrir modal de edição
+    abrirModalEdicao(relacionamento, professor);
+}
+
+/* ===== ABRIR MODAL DE EDIÇÃO ===== */
+function abrirModalEdicao(relacionamento, professor) {
+    // Criar modal de edição
+    let modalEdicao = document.getElementById('modalEdicao');
+    
+    // Se não existir, criar
+    if (!modalEdicao) {
+        modalEdicao = document.createElement('div');
+        modalEdicao.id = 'modalEdicao';
+        modalEdicao.className = 'modal';
+        document.body.appendChild(modalEdicao);
     }
     
-    // Adicionar degrees do relacionamento
-    relacionamento.degrees.forEach(degreeItem => {
-        adicionarDegreeAoFormulario();
-        
-        // Selecionar o último degree adicionado
-        const lastDegree = elementos.degreesContainer.lastElementChild;
-        const degreeSelect = lastDegree.querySelector('.degree-select');
-        if (degreeSelect) {
-            degreeSelect.value = degreeItem.degreeId;
-        }
-        
-        // Marcar classes
-        degreeItem.classes.forEach(classe => {
-            const checkbox = lastDegree.querySelector(`input[value="${classe.classPosition || classe.classId}"]`);
-            if (checkbox) checkbox.checked = true;
+    // Encontrar matéria
+    const materia = materias.find(m => m.id === relacionamento.matterId);
+    const materiaNome = materia ? materia.name : 'Desconhecida';
+    
+    // Gerar HTML do modal
+    modalEdicao.innerHTML = `
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header" style="background: #060181;">
+                <h3><i class="fas fa-edit"></i> Editar Relacionamento</h3>
+                <button class="close-modal" onclick="fecharModalEdicao()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarRelacionamento">
+                    <div class="form-grid">
+                        <!-- PROFESSOR -->
+                        <div class="form-group">
+                            <label for="editarProfessor"><i class="fas fa-user-tie"></i> Professor</label>
+                            <input type="text" id="editarProfessor" class="form-select" 
+                                value="${professor.name}" required>
+                        </div>
+                        
+                        <!-- MATÉRIA -->
+                        <div class="form-group">
+                            <label for="editarMateria"><i class="fas fa-book"></i> Matéria</label>
+                            <select id="editarMateria" class="form-select" required>
+                                <option value="">Selecione uma matéria</option>
+                                ${materias.map(m => `
+                                    <option value="${m.id}" ${m.id === relacionamento.matterId ? 'selected' : ''}>
+                                        ${m.name}
+                                    </option>
+                                `).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- DEGREES E CLASSES -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-graduation-cap"></i> Degrees e Classes Relacionadas</h4>
+                        <div id="editarDegreesContainer" class="degrees-container">
+                            ${gerarDegreesEdicaoHTML(relacionamento.degrees)}
+                        </div>
+                        
+                        <button type="button" class="btn-add" onclick="adicionarDegreeEdicao()">
+                            <i class="fas fa-plus"></i> Adicionar Degree
+                        </button>
+                    </div>
+                    
+                    <!-- BOTÕES DO FORMULÁRIO DE EDIÇÃO -->
+                    <div class="form-botoes">
+                        <button type="submit" class="btn-submit" style="background: #060181;">
+                            <i class="fas fa-save"></i> Salvar Alterações
+                        </button>
+                        <button type="button" class="btn-limpar" onclick="fecharModalEdicao()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                    
+                    <input type="hidden" id="editarRelacionamentoId" value="${relacionamento.id}">
+                </form>
+            </div>
+        </div>
+    `;
+    
+    // Mostrar modal
+    modalEdicao.style.display = 'flex';
+    document.body.classList.add('modal-aberto');
+    
+    // Configurar evento do formulário
+    const form = document.getElementById('formEditarRelacionamento');
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            salvarEdicaoRelacionamento(relacionamento.id);
         });
+    }
+    
+    // Configurar fechar modal clicando fora
+    modalEdicao.addEventListener('click', (e) => {
+        if (e.target === modalEdicao) {
+            fecharModalEdicao();
+        }
+    });
+}
+
+/* ===== GERAR HTML DOS DEGREES PARA EDIÇÃO ===== */
+function gerarDegreesEdicaoHTML(degreesData) {
+    if (!degreesData || degreesData.length === 0) {
+        // Adicionar um degree vazio
+        return gerarDegreeItemEdicaoHTML(null);
+    }
+    
+    return degreesData.map(degreeItem => 
+        gerarDegreeItemEdicaoHTML(degreeItem)
+    ).join('');
+}
+
+/* ===== GERAR HTML DE UM DEGREE PARA EDIÇÃO ===== */
+function gerarDegreeItemEdicaoHTML(degreeItem) {
+    const degreeId = degreeItem ? degreeItem.degreeId : '';
+    const classesSelecionadas = degreeItem ? degreeItem.classes.map(c => c.classPosition || c.classId || 1) : [];
+    
+    // HTML para checkboxes de classes
+    let classesCheckboxes = '';
+    classes.forEach((classe, index) => {
+        const classId = index + 1;
+        const checked = classesSelecionadas.includes(classId) ? 'checked' : '';
+        classesCheckboxes += `
+            <div class="class-checkbox">
+                <input type="checkbox" value="${classId}" ${checked}>
+                <label>${classe.name}</label>
+            </div>
+        `;
     });
     
-    mostrarNotificacao('Dados carregados no formulário. Atualize e salve.', 'info');
+    return `
+    <div class="degree-item">
+        <div class="degree-header">
+            <select class="degree-select">
+                <option value="">Selecione um degree</option>
+                ${degrees.map(d => `
+                    <option value="${d.id}" ${d.id == degreeId ? 'selected' : ''}>
+                        ${d.name}
+                    </option>
+                `).join('')}
+            </select>
+            <button type="button" class="btn-remover-degree" onclick="removerDegreeEdicao(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+        <div class="classes-container">
+            <label>Classes:</label>
+            <div class="classes-checkboxes">
+                ${classesCheckboxes}
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+/* ===== ADICIONAR DEGREE NA EDIÇÃO ===== */
+function adicionarDegreeEdicao() {
+    const container = document.getElementById('editarDegreesContainer');
+    if (!container) return;
+    
+    container.innerHTML += gerarDegreeItemEdicaoHTML(null);
+}
+
+/* ===== REMOVER DEGREE NA EDIÇÃO ===== */
+function removerDegreeEdicao(botao) {
+    const degreeItem = botao.closest('.degree-item');
+    const container = document.getElementById('editarDegreesContainer');
+    
+    if (container && container.children.length > 1) {
+        degreeItem.remove();
+    } else {
+        mostrarNotificacao('É necessário ter pelo menos um degree', 'warning');
+    }
+}
+
+/* ===== SALVAR EDIÇÃO DO RELACIONAMENTO ===== */
+function salvarEdicaoRelacionamento(relacionamentoId) {
+    const relacionamentoIndex = relacionamentos.findIndex(r => r.id === relacionamentoId);
+    if (relacionamentoIndex === -1) {
+        mostrarNotificacao('Relacionamento não encontrado', 'error');
+        return;
+    }
+    
+    // Coletar dados do formulário
+    const novoNomeProfessor = document.getElementById('editarProfessor')?.value.trim();
+    const novaMateriaId = document.getElementById('editarMateria')?.value;
+    
+    if (!novoNomeProfessor || !novaMateriaId) {
+        mostrarNotificacao('Preencha todos os campos obrigatórios', 'error');
+        return;
+    }
+    
+    // Coletar degrees e classes
+    const degreesData = [];
+    const degreeItems = document.querySelectorAll('#editarDegreesContainer .degree-item');
+    
+    for (const degreeItem of degreeItems) {
+        const degreeSelect = degreeItem.querySelector('.degree-select');
+        const degreeId = degreeSelect?.value;
+        
+        if (!degreeId) {
+            mostrarNotificacao('Selecione um degree para todos os itens', 'error');
+            return;
+        }
+        
+        // Coletar classes selecionadas
+        const classesSelecionadas = [];
+        const checkboxes = degreeItem.querySelectorAll('input[type="checkbox"]:checked');
+        
+        checkboxes.forEach(checkbox => {
+            classesSelecionadas.push({
+                classPosition: parseInt(checkbox.value)
+            });
+        });
+        
+        if (classesSelecionadas.length === 0) {
+            mostrarNotificacao('Selecione pelo menos uma classe para cada degree', 'error');
+            return;
+        }
+        
+        degreesData.push({
+            degreeId: parseInt(degreeId),
+            classes: classesSelecionadas
+        });
+    }
+    
+    // Atualizar professor
+    const professorIndex = professores.findIndex(p => p.id === relacionamentos[relacionamentoIndex].teacherId);
+    if (professorIndex !== -1) {
+        professores[professorIndex].name = novoNomeProfessor;
+    }
+    
+    // Atualizar relacionamento
+    relacionamentos[relacionamentoIndex] = {
+        ...relacionamentos[relacionamentoIndex],
+        matterId: parseInt(novaMateriaId),
+        degrees: degreesData
+    };
+    
+    // Fechar modal
+    fecharModalEdicao();
+    
+    // Atualizar interface
+    renderizarTabela();
+    
+    // Mostrar notificação
+    mostrarNotificacao('Relacionamento atualizado com sucesso!', 'success');
+    
+    console.log('Relacionamento atualizado:', relacionamentos[relacionamentoIndex]);
+}
+
+/* ===== FECHAR MODAL DE EDIÇÃO ===== */
+function fecharModalEdicao() {
+    const modal = document.getElementById('modalEdicao');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.classList.remove('modal-aberto');
+    }
 }
 
 /* ===== EXCLUIR RELACIONAMENTO ===== */
@@ -680,18 +887,14 @@ function configurarEventos() {
     // Modal
     const closeModalBtn = document.querySelector('.close-modal');
     if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', () => {
-            if (elementos.modalAlunos) {
-                elementos.modalAlunos.style.display = 'none';
-            }
-        });
+        closeModalBtn.addEventListener('click', fecharModal);
     }
     
     // Fechar modal clicando fora
     if (elementos.modalAlunos) {
         elementos.modalAlunos.addEventListener('click', (e) => {
             if (e.target === elementos.modalAlunos) {
-                elementos.modalAlunos.style.display = 'none';
+                fecharModal();
             }
         });
     }
@@ -700,7 +903,12 @@ function configurarEventos() {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && elementos.modalAlunos && 
             elementos.modalAlunos.style.display === 'flex') {
-            elementos.modalAlunos.style.display = 'none';
+            fecharModal();
+        }
+        
+        if (e.key === 'Escape' && document.getElementById('modalEdicao') && 
+            document.getElementById('modalEdicao').style.display === 'flex') {
+            fecharModalEdicao();
         }
     });
     
@@ -773,7 +981,24 @@ function mostrarNotificacao(mensagem, tipo = 'info') {
     }, 3000);
 }
 
+/* ===== ANIMAÇÕES CSS ===== */
+function adicionarAnimacoes() {
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 /* ===== DISPARAR INICIALIZAÇÃO ===== */
+adicionarAnimacoes();
 iniciarAposDOM();
 
 /* ===== FUNÇÕES GLOBAIS ===== */
@@ -784,3 +1009,7 @@ window.adicionarDegreeAoFormulario = adicionarDegreeAoFormulario;
 window.removerDegree = removerDegree;
 window.limparFormulario = limparFormulario;
 window.salvarNovoRelacionamento = salvarNovoRelacionamento;
+window.adicionarDegreeEdicao = adicionarDegreeEdicao;
+window.removerDegreeEdicao = removerDegreeEdicao;
+window.fecharModalEdicao = fecharModalEdicao;
+window.fecharModal = fecharModal;

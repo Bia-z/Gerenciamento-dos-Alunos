@@ -6,13 +6,6 @@ let grafico = null;
 
 // CONFIGURAÇÃO
 const CONFIG = {
-    degrees: [
-        { id: 1, nome: "Ensino Fundamental" },
-        { id: 2, nome: "Ensino Médio" },
-        { id: 3, nome: "Cursinho" },
-        { id: 4, nome: "Estuda em Casa" },
-        { id: 5, nome: "Outros" }
-    ],
     classes: ["A", "B", "C", "D", "E", "F"]
 };
 
@@ -37,21 +30,72 @@ const elementos = {
 async function iniciar() {
     console.log('🚀 Iniciando sistema...');
     
-    // Configurar degrees e classes
-    degrees = CONFIG.degrees;
-    classes = CONFIG.classes;
-    
-    // Carregar alunos do JSON
-    await carregarAlunos();
-    
-    // Configurar eventos
-    configurarEventos();
-    
-    // Renderizar
-    renderizarTabela();
-    
-    console.log('✅ Sistema pronto!');
-    mostrarNotificacao('Sistema carregado com sucesso!', 'success');
+    try {
+        // Carregar degrees do JSON
+        await carregarDegrees();
+        
+        // Configurar classes
+        classes = CONFIG.classes;
+        
+        // Carregar alunos do JSON
+        await carregarAlunos();
+        
+        // Configurar eventos
+        configurarEventos();
+        
+        // Atualizar filtro de degrees
+        atualizarFiltroDegrees();
+        
+        // Renderizar
+        renderizarTabela();
+        
+        console.log('✅ Sistema pronto!');
+        mostrarNotificacao('Sistema carregado com sucesso!', 'success');
+        
+    } catch (erro) {
+        console.error('❌ Erro ao iniciar:', erro);
+        console.warn('⚠️ Usando dados de exemplo');
+        usarDadosExemplo();
+        renderizarTabela();
+    }
+}
+
+/* ===== CARREGAR DEGREES DO JSON ===== */
+async function carregarDegrees() {
+    try {
+        const resposta = await fetch('../data/degrees.json');
+        if (!resposta.ok) throw new Error('Erro ao carregar degrees');
+        
+        degrees = await resposta.json();
+        console.log(`🎓 ${degrees.length} degrees carregados do JSON`);
+    } catch (erro) {
+        console.warn('⚠️ Usando degrees de exemplo');
+        // Fallback com todos os degrees originais
+        degrees = [
+            { id: 1, name: "Ensino Fundamental" },
+            { id: 2, name: "1° ano do ensino médio" },
+            { id: 3, name: "2° ano ensino médio" },
+            { id: 4, name: "3° ano do ensino médio" },
+            { id: 5, name: "Cursinho" },
+            { id: 8, name: "4º ano do ensino fundamental" },
+            { id: 9, name: "5º ano do ensino fundamental" },
+            { id: 10, name: "6º ano do ensino fundamental" },
+            { id: 11, name: "7º ano do ensino fundamental" },
+            { id: 12, name: "8º ano do ensino fundamental" },
+            { id: 13, name: "9º ano do ensino fundamental" },
+            { id: 6, name: "Estudo em casa" },
+            { id: 7, name: "Outros" }
+        ];
+    }
+}
+
+/* ===== ATUALIZAR FILTRO DE DEGREES ===== */
+function atualizarFiltroDegrees() {
+    const filtroDegree = document.getElementById('degreeFilter');
+    if (filtroDegree) {
+        filtroDegree.innerHTML = '<option value="">Todos os Degrees</option>' +
+            degrees.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    }
 }
 
 /* ===== CARREGAR ALUNOS ===== */
@@ -61,41 +105,46 @@ async function carregarAlunos() {
         if (!resposta.ok) throw new Error('Erro ao carregar alunos');
         
         const dados = await resposta.json();
-        alunos = dados.map(aluno => ({
-            ...aluno,
-            // Garantir que os degrees sejam dos 5 simplificados
-            degreeId: converterDegreeAntigo(aluno.degreeId)
-        }));
+        alunos = dados;
         
         console.log(`📊 ${alunos.length} alunos carregados`);
     } catch (erro) {
         console.warn('⚠️ Usando dados de exemplo');
-        criarDadosExemplo();
+        throw erro; // Propaga o erro para iniciar() usar dados de exemplo
     }
 }
 
-/* ===== CONVERTER DEGREES ANTIGOS ===== */
-function converterDegreeAntigo(degreeId) {
-    const mapeamento = {
-        1: 1, 8: 1, 9: 1, 10: 1, 11: 1, 12: 1, 13: 1, // Ensino Fundamental
-        2: 2, 3: 2, 4: 2, // Ensino Médio
-        5: 3, // Cursinho
-        6: 4, // Estuda em Casa
-        7: 5  // Outros
-    };
-    return mapeamento[degreeId] || ((degreeId % 5) + 1);
-}
-
-/* ===== DADOS DE EXEMPLO ===== */
-function criarDadosExemplo() {
+/* ===== USAR DADOS DE EXEMPLO ===== */
+function usarDadosExemplo() {
+    // Degrees de exemplo
+    degrees = [
+        { id: 1, name: "Ensino Fundamental" },
+        { id: 2, name: "1° ano do ensino médio" },
+        { id: 3, name: "2° ano ensino médio" },
+        { id: 4, name: "3° ano do ensino médio" },
+        { id: 5, name: "Cursinho" },
+        { id: 8, name: "4º ano do ensino fundamental" },
+        { id: 9, name: "5º ano do ensino fundamental" },
+        { id: 10, name: "6º ano do ensino fundamental" },
+        { id: 11, name: "7º ano do ensino fundamental" },
+        { id: 12, name: "8º ano do ensino fundamental" },
+        { id: 13, name: "9º ano do ensino fundamental" },
+        { id: 6, name: "Estudo em casa" },
+        { id: 7, name: "Outros" }
+    ];
+    
+    // Alunos de exemplo
     alunos = [
         { id: 1, ra: 123456, name: "João Silva", degreeId: 1, classId: 1 },
         { id: 2, ra: 234567, name: "Maria Santos", degreeId: 2, classId: 2 },
-        { id: 3, ra: 345678, name: "Pedro Oliveira", degreeId: 1, classId: 3 },
-        { id: 4, ra: 456789, name: "Ana Costa", degreeId: 3, classId: 4 },
-        { id: 5, ra: 567890, name: "Carlos Lima", degreeId: 4, classId: 5 },
-        { id: 6, ra: 678901, name: "Juliana Alves", degreeId: 5, classId: 6 }
+        { id: 3, ra: 345678, name: "Pedro Oliveira", degreeId: 3, classId: 3 },
+        { id: 4, ra: 456789, name: "Ana Costa", degreeId: 8, classId: 4 },
+        { id: 5, ra: 567890, name: "Carlos Lima", degreeId: 6, classId: 5 },
+        { id: 6, ra: 678901, name: "Juliana Alves", degreeId: 7, classId: 6 }
     ];
+    
+    classes = CONFIG.classes;
+    atualizarFiltroDegrees();
 }
 
 /* ===== RENDERIZAR TABELA ===== */
@@ -115,7 +164,12 @@ function renderizarTabela() {
         elementos.emptyState.style.display = 'none';
         
         // Gerar HTML da tabela
-        elementos.tabela.innerHTML = filtrados.map(aluno => `
+        elementos.tabela.innerHTML = filtrados.map(aluno => {
+            // Encontrar o nome do degree
+            const degree = degrees.find(d => d.id === aluno.degreeId);
+            const degreeNome = degree ? degree.name : `Degree ${aluno.degreeId}`;
+            
+            return `
             <tr>
                 <td>${aluno.id}</td>
                 <td>${aluno.ra}</td>
@@ -125,7 +179,7 @@ function renderizarTabela() {
                     <select onchange="atualizarAluno(${aluno.id}, 'degreeId', this.value)">
                         ${degrees.map(d => `
                             <option value="${d.id}" ${d.id === aluno.degreeId ? 'selected' : ''}>
-                                ${d.nome}
+                                ${d.name}
                             </option>
                         `).join('')}
                     </select>
@@ -145,7 +199,8 @@ function renderizarTabela() {
                     </button>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     
     // Atualizar gráfico
@@ -226,16 +281,23 @@ function atualizarGrafico() {
     // Contar alunos por degree
     const contagem = {};
     degrees.forEach(d => {
-        contagem[d.nome] = alunos.filter(a => a.degreeId === d.id).length;
+        contagem[d.name] = alunos.filter(a => a.degreeId === d.id).length;
     });
     
     const labels = Object.keys(contagem);
     const dados = Object.values(contagem);
-    const cores = ['#4A63E7', '#28a745', '#ffc107', '#dc3545', '#17a2b8'];
+    
+    // Cores para todos os degrees
+    const cores = [
+        '#4A63E7', '#28a745', '#ffc107', '#dc3545', '#17a2b8',
+        '#6610f2', '#e83e8c', '#fd7e14', '#20c997', '#6f42c1',
+        '#d63384', '#0dcaf0', '#ff6b6b', '#198754', '#0d6efd'
+    ];
     
     if (grafico) {
         grafico.data.labels = labels;
         grafico.data.datasets[0].data = dados;
+        grafico.data.datasets[0].backgroundColor = cores;
         grafico.update();
     } else {
         grafico = new Chart(ctx, {
@@ -247,8 +309,8 @@ function atualizarGrafico() {
                     data: dados,
                     backgroundColor: cores,
                     borderColor: 'white',
-                    borderWidth: 2,
-                    borderRadius: 6
+                    borderWidth: 1,
+                    borderRadius: 4
                 }]
             },
             options: {
@@ -258,6 +320,20 @@ function atualizarGrafico() {
                     y: {
                         beginAtZero: true,
                         ticks: { stepSize: 1 }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45,
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
                     }
                 }
             }
