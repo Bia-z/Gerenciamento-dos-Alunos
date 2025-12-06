@@ -535,10 +535,27 @@ function removerDegree(botao) {
     }
 }
 
-/* ===== LIMPAR FORMULÁRIO ===== */
+/* ===== LIMPAR FORMULÁRIO (COMPLETO) ===== */
 function limparFormulario() {
     if (elementos.formNovoRelacionamento) {
         elementos.formNovoRelacionamento.reset();
+    }
+    
+    // Remover input de novo professor se existir
+    const novoProfessorInput = document.getElementById('novoProfessorInput');
+    if (novoProfessorInput) {
+        novoProfessorInput.remove();
+    }
+    
+    // Restaurar select de professores
+    if (elementos.selectProfessor) {
+        elementos.selectProfessor.style.display = '';
+    }
+    
+    // Remover botão de cancelar
+    const cancelarBtn = document.querySelector('.form-group button.btn-limpar');
+    if (cancelarBtn && cancelarBtn.innerHTML.includes('Cancelar')) {
+        cancelarBtn.remove();
     }
     
     // Limpar degrees container e adicionar um novo
@@ -550,16 +567,73 @@ function limparFormulario() {
     mostrarNotificacao('Formulário limpo!', 'info');
 }
 
-/* ===== SALVAR NOVO RELACIONAMENTO ===== */
+/* ===== CRIAR PROFESSOR NA EDIÇÃO ===== */
+function criarProfessorNaEdicao() {
+    const professorInput = document.getElementById('editarProfessor');
+    if (!professorInput) return;
+    
+    const novoNome = professorInput.value.trim();
+    if (!novoNome) {
+        mostrarNotificacao('Digite o nome do professor', 'error');
+        return;
+    }
+    
+    // Verificar se já existe
+    const professorExistente = professores.find(p => p.name.toLowerCase() === novoNome.toLowerCase());
+    
+    if (!professorExistente) {
+        // Criar novo professor
+        const novoId = professores.length > 0 ? Math.max(...professores.map(p => p.id)) + 1 : 1;
+        const novoProfessor = {
+            id: novoId,
+            name: novoNome
+        };
+        
+        professores.push(novoProfessor);
+        atualizarFiltroProfessores();
+        
+        mostrarNotificacao(`Novo professor "${novoNome}" criado!`, 'success');
+        return novoId;
+    }
+    
+    return professorExistente.id;
+}
+
+/* ===== SALVAR NOVO RELACIONAMENTO (COM PROFESSOR NOVO) ===== */
 function salvarNovoRelacionamento(e) {
     e.preventDefault();
     
-    // Validar campos básicos
-    const professorId = elementos.selectProfessor ? elementos.selectProfessor.value : '';
+    let professorId;
+    let professorNome = '';
+    
+    // Verificar se é um professor novo
+    const novoProfessorInput = document.getElementById('novoProfessorInput');
+    if (novoProfessorInput && novoProfessorInput.value.trim()) {
+        // Criar novo professor
+        professorNome = novoProfessorInput.value.trim();
+        const novoId = professores.length > 0 ? Math.max(...professores.map(p => p.id)) + 1 : 1;
+        
+        const novoProfessor = {
+            id: novoId,
+            name: professorNome
+        };
+        
+        professores.push(novoProfessor);
+        professorId = novoId;
+        
+        // Atualizar filtros
+        atualizarFiltroProfessores();
+    } else {
+        // Usar professor existente
+        professorId = elementos.selectProfessor ? elementos.selectProfessor.value : '';
+        const professorSelecionado = professores.find(p => p.id == professorId);
+        professorNome = professorSelecionado ? professorSelecionado.name : '';
+    }
+    
     const materiaId = elementos.selectMateria ? elementos.selectMateria.value : '';
     
     if (!professorId || !materiaId) {
-        mostrarNotificacao('Selecione um professor e uma matéria', 'error');
+        mostrarNotificacao('Selecione ou crie um professor e uma matéria', 'error');
         return;
     }
     
@@ -618,7 +692,7 @@ function salvarNovoRelacionamento(e) {
     limparFormulario();
     
     // Mostrar notificação
-    mostrarNotificacao('Novo relacionamento criado com sucesso!', 'success');
+    mostrarNotificacao(`Novo relacionamento criado com sucesso! Professor: ${professorNome}`, 'success');
     
     console.log('Novo relacionamento:', novoRelacionamento);
 }
@@ -640,6 +714,71 @@ function editarRelacionamento(id) {
     
     // Abrir modal de edição
     abrirModalEdicao(relacionamento, professor);
+}
+
+/* ===== ATUALIZAR TODOS OS FILTROS AUTOMATICAMENTE ===== */
+function atualizarTodosFiltros() {
+    console.log('🔄 Atualizando todos os filtros...');
+    
+    // 1. Atualizar filtro na tabela principal
+    if (elementos.filtroTeacher) {
+        const valorAtual = elementos.filtroTeacher.value;
+        elementos.filtroTeacher.innerHTML = '<option value="">Todos os Professores</option>' +
+            professores.map(p => `<option value="${p.id}" ${p.id == valorAtual ? 'selected' : ''}>${p.name}</option>`).join('');
+    }
+    
+    // 2. Atualizar select no formulário de novo relacionamento
+    if (elementos.selectProfessor) {
+        const valorAtual = elementos.selectProfessor.value;
+        elementos.selectProfessor.innerHTML = `
+            <option value="">Selecione um professor</option>
+            <option value="novo">➕ Criar novo professor</option>
+            ${professores.map(p => `<option value="${p.id}" ${p.id == valorAtual ? 'selected' : ''}>${p.name}</option>`).join('')}
+        `;
+        
+        // Reaplicar o evento (importante!)
+        elementos.selectProfessor.addEventListener('change', function() {
+            if (this.value === 'novo') {
+                // Mesmo código do inicializarFormulario()
+                const professorGroup = this.closest('.form-group');
+                if (professorGroup) {
+                    this.style.display = 'none';
+                    
+                    const novoInput = document.createElement('input');
+                    novoInput.type = 'text';
+                    novoInput.id = 'novoProfessorInput';
+                    novoInput.className = 'form-select';
+                    novoInput.placeholder = 'Digite o nome do novo professor';
+                    novoInput.required = true;
+                    novoInput.style.marginTop = '10px';
+                    
+                    const cancelarBtn = document.createElement('button');
+                    cancelarBtn.type = 'button';
+                    cancelarBtn.className = 'btn-limpar';
+                    cancelarBtn.innerHTML = '<i class="fas fa-times"></i> Cancelar';
+                    cancelarBtn.style.marginTop = '10px';
+                    cancelarBtn.style.marginLeft = '10px';
+                    cancelarBtn.style.padding = '10px 20px';
+                    
+                    cancelarBtn.onclick = function() {
+                        elementos.selectProfessor.style.display = '';
+                        novoInput.remove();
+                        cancelarBtn.remove();
+                        elementos.selectProfessor.value = '';
+                    };
+                    
+                    professorGroup.appendChild(novoInput);
+                    professorGroup.appendChild(cancelarBtn);
+                    novoInput.focus();
+                }
+            }
+        });
+    }
+    
+    // 3. Atualizar tabela também
+    renderizarTabela();
+    
+    console.log('✅ Filtros atualizados! Total de professores:', professores.length);
 }
 
 /* ===== ABRIR MODAL DE EDIÇÃO ===== */
@@ -669,12 +808,12 @@ function abrirModalEdicao(relacionamento, professor) {
             <div class="modal-body">
                 <form id="formEditarRelacionamento">
                     <div class="form-grid">
-                        <!-- PROFESSOR -->
-                        <div class="form-group">
-                            <label for="editarProfessor"><i class="fas fa-user-tie"></i> Professor</label>
-                            <input type="text" id="editarProfessor" class="form-select" 
-                                value="${professor.name}" required>
-                        </div>
+                        <!-- PROFESSOR (com opção de editar/nome novo) -->
+                    <div class="form-group">
+                        <label for="editarProfessor"><i class="fas fa-user-tie"></i> Professor *</label>
+                        <input type="text" id="editarProfessor" class="form-select" 
+                            value="${professor.name}" required placeholder="Digite o nome do professor">
+                    </div>
                         
                         <!-- MATÉRIA -->
                         <div class="form-group">
@@ -814,7 +953,7 @@ function removerDegreeEdicao(botao) {
     }
 }
 
-/* ===== SALVAR EDIÇÃO DO RELACIONAMENTO ===== */
+/* ===== SALVAR EDIÇÃO DO RELACIONAMENTO (COM ATUALIZAÇÃO DE FILTRO) ===== */
 function salvarEdicaoRelacionamento(relacionamentoId) {
     const relacionamentoIndex = relacionamentos.findIndex(r => r.id === relacionamentoId);
     if (relacionamentoIndex === -1) {
@@ -863,17 +1002,35 @@ function salvarEdicaoRelacionamento(relacionamentoId) {
             degreeId: parseInt(degreeId),
             classes: classesSelecionadas
         });
+
+        atualizarTodosFiltros();
     }
     
-    // Atualizar professor
-    const professorIndex = professores.findIndex(p => p.id === relacionamentos[relacionamentoIndex].teacherId);
-    if (professorIndex !== -1) {
-        professores[professorIndex].name = novoNomeProfessor;
+    // VERIFICAR SE É UM PROFESSOR NOVO
+    const professorExistente = professores.find(p => p.id === relacionamentos[relacionamentoIndex].teacherId);
+    let professorId = relacionamentos[relacionamentoIndex].teacherId;
+    
+    if (professorExistente) {
+        // Atualizar professor existente
+        professorExistente.name = novoNomeProfessor;
+    } else {
+        // Criar novo professor
+        const novoId = professores.length > 0 ? Math.max(...professores.map(p => p.id)) + 1 : 1;
+        const novoProfessor = {
+            id: novoId,
+            name: novoNomeProfessor
+        };
+        professores.push(novoProfessor);
+        professorId = novoId;
+        
+        // Atualizar o filtro de professores
+        atualizarFiltroProfessores();
     }
     
     // Atualizar relacionamento
     relacionamentos[relacionamentoIndex] = {
         ...relacionamentos[relacionamentoIndex],
+        teacherId: professorId,
         matterId: parseInt(novaMateriaId),
         degrees: degreesData
     };
@@ -888,6 +1045,21 @@ function salvarEdicaoRelacionamento(relacionamentoId) {
     mostrarNotificacao('Relacionamento atualizado com sucesso!', 'success');
     
     console.log('Relacionamento atualizado:', relacionamentos[relacionamentoIndex]);
+}
+
+/* ===== ATUALIZAR FILTRO DE PROFESSORES ===== */
+function atualizarFiltroProfessores() {
+    // Atualizar o filtro na tabela
+    if (elementos.filtroTeacher) {
+        elementos.filtroTeacher.innerHTML = '<option value="">Todos os Professores</option>' +
+            professores.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    }
+    
+    // Atualizar o filtro no formulário
+    if (elementos.selectProfessor) {
+        elementos.selectProfessor.innerHTML = '<option value="">Selecione um professor</option>' +
+            professores.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    }
 }
 
 /* ===== FECHAR MODAL DE EDIÇÃO ===== */
