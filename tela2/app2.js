@@ -305,7 +305,7 @@ function filtrarRelacionamentos() {
     });
 }
 
-/* ===== VER ALUNOS DO RELACIONAMENTO (CORRIGIDO) ===== */
+/* ===== VER ALUNOS DO RELACIONAMENTO (COM DESTAQUE) ===== */
 function verAlunosDoRelacionamento(relacionamentoId) {
     const relacionamento = relacionamentos.find(r => r.id === relacionamentoId);
     if (!relacionamento) return;
@@ -336,18 +336,19 @@ function verAlunosDoRelacionamento(relacionamentoId) {
         return degree ? degree.name : `Degree ${d.degreeId}`;
     });
     
-    // Preencher modal
+    // Preencher modal COM DESTAQUE
     if (elementos.modalDegreeNome) {
-        elementos.modalDegreeNome.textContent = degreeNomes.join(', ');
+        elementos.modalDegreeNome.textContent = degreeNomes.join(' • ');
     }
     
     if (alunosRelacionados.length === 0) {
         if (elementos.modalAlunosLista) {
             elementos.modalAlunosLista.innerHTML = `
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 40px; color: #718096;">
-                        <i class="fas fa-user-slash fa-2x" style="margin-bottom: 15px;"></i>
-                        <p>Nenhum aluno encontrado para este(s) degree(s) e classe(s)</p>
+                    <td colspan="5" style="text-align: center; padding: 60px; color: #718096; background: #f8f9fa;">
+                        <i class="fas fa-user-slash fa-3x" style="margin-bottom: 25px; color: #dee2e6;"></i>
+                        <h4 style="color: #6c757d; font-weight: 600; margin-bottom: 15px;">Nenhum aluno encontrado</h4>
+                        <p style="font-size: 16px;">Não há alunos para este(s) degree(s) e classe(s)</p>
                     </td>
                 </tr>
             `;
@@ -360,43 +361,96 @@ function verAlunosDoRelacionamento(relacionamentoId) {
                 const degreeNome = degree ? degree.name : `Degree ${aluno.degreeId}`;
                 
                 return `
-                <tr>
-                    <td>${aluno.id}</td>
-                    <td>${aluno.name}</td>
-                    <td>${aluno.ra}</td>
-                    <td>${classeNome}</td>
-                    <td>${degreeNome}</td>
+                <tr style="border-bottom: 1px solid #e9ecef;">
+                    <td style="font-weight: 700; color: #060181;">${aluno.id}</td>
+                    <td style="font-weight: 600;">${aluno.name}</td>
+                    <td style="color: #f74a4b; font-weight: 600;">${aluno.ra}</td>
+                    <td><span class="class-badge">${classeNome}</span></td>
+                    <td><span class="degree-badge">${degreeNome}</span></td>
                 </tr>
                 `;
             }).join('');
         }
     }
     
-    // Mostrar modal
+    // Mostrar modal com animação
     if (elementos.modalAlunos) {
         abrirModal();
+        
+        // Adicionar classe para destacar o modal
+        elementos.modalAlunos.querySelector('.modal-content').classList.add('modal-destaque');
+        
         // Forçar o modal para o topo
         elementos.modalAlunos.scrollTop = 0;
+        
+        // Adicionar animação de entrada
+        elementos.modalAlunos.querySelector('.modal-content').style.animation = 'modalEntrada 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
     }
 }
 
-/* ===== ABRIR MODAL COM CONTROLE DE SCROLL ===== */
+/* ===== ABRIR MODAL FIXO NO CENTRO (VERSÃO SIMPLES) ===== */
 function abrirModal() {
     if (elementos.modalAlunos) {
+        // 1. Remover o modal de dentro do container (se estiver lá)
+        const container = document.querySelector('.container');
+        if (container && container.contains(elementos.modalAlunos)) {
+            document.body.appendChild(elementos.modalAlunos);
+        }
+        
+        // 2. Aplicar estilos para ficar fixo no centro
+        elementos.modalAlunos.style.position = 'fixed';
+        elementos.modalAlunos.style.top = '0';
+        elementos.modalAlunos.style.left = '0';
+        elementos.modalAlunos.style.width = '100%';
+        elementos.modalAlunos.style.height = '100%';
+        elementos.modalAlunos.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        elementos.modalAlunos.style.zIndex = '9999';
         elementos.modalAlunos.style.display = 'flex';
-        document.body.classList.add('modal-aberto');
-        // Impedir scroll no body
+        elementos.modalAlunos.style.alignItems = 'center';
+        elementos.modalAlunos.style.justifyContent = 'center';
+        elementos.modalAlunos.style.padding = '20px';
+        elementos.modalAlunos.style.overflowY = 'auto';
+        
+        // 3. Ajustar o conteúdo do modal para ser responsivo
+        const modalContent = elementos.modalAlunos.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.style.margin = 'auto';
+            modalContent.style.maxHeight = '85vh';
+            modalContent.style.overflowY = 'auto';
+            modalContent.style.animation = 'modalEntrada 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+        }
+        
+        // 4. Remover qualquer blur/opacidade do modal
+        elementos.modalAlunos.style.filter = 'none';
+        elementos.modalAlunos.style.opacity = '1';
+        
+        // 5. Bloquear scroll da página
         document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-aberto');
+        
+        console.log('✅ Modal aberto no centro da tela');
     }
 }
 
-/* ===== FECHAR MODAL COM CONTROLE DE SCROLL ===== */
+/* ===== FECHAR MODAL (VERSÃO SIMPLES) ===== */
 function fecharModal() {
     if (elementos.modalAlunos) {
+        // 1. Esconder o modal
         elementos.modalAlunos.style.display = 'none';
-        document.body.classList.remove('modal-aberto');
-        // Restaurar scroll no body
+        
+        // 2. Resetar posição (mas manter no body)
+        elementos.modalAlunos.style.position = '';
+        elementos.modalAlunos.style.top = '';
+        elementos.modalAlunos.style.left = '';
+        elementos.modalAlunos.style.width = '';
+        elementos.modalAlunos.style.height = '';
+        elementos.modalAlunos.style.backgroundColor = '';
+        
+        // 3. Liberar scroll da página
         document.body.style.overflow = '';
+        document.body.classList.remove('modal-aberto');
+        
+        console.log('✅ Modal fechado');
     }
 }
 

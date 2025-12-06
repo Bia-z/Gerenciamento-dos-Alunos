@@ -354,11 +354,8 @@ td .btn-excluir:hover {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
+    background: rgba(0, 0, 0, 0.5); /* Fundo semi-transparente */
+    z-index: 9999;
     animation: fadeIn 0.3s ease;
     padding: 20px;
     overflow-y: auto;
@@ -373,19 +370,21 @@ td .btn-excluir:hover {
     background: white;
     width: 100%;
     max-width: 900px;
-    max-height: calc(90vh - 40px);
+    max-height: 85vh; /* Altura máxima */
     border-radius: 20px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    box-shadow: 0 25px 60px rgba(0,0,0,0.3);
     animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
     border: 1px solid #e9ecef;
     margin: auto;
+    position: relative; /* Para garantir que fique acima */
+    z-index: 10000;
 }
 
 @keyframes modalSlideIn {
     from {
         opacity: 0;
-        transform: translateY(-50px) scale(0.95);
+        transform: translateY(-30px) scale(0.95);
     }
     to {
         opacity: 1;
@@ -439,7 +438,7 @@ td .btn-excluir:hover {
 
 .modal-body {
     padding: 30px;
-    max-height: calc(70vh - 140px);
+    max-height: calc(85vh - 140px); /* Altura ajustada */
     overflow-y: auto;
 }
 
@@ -465,6 +464,7 @@ td .btn-excluir:hover {
     border: none;
     border-radius: 12px;
     overflow: hidden;
+    margin-top: 20px;
 }
 
 .modal-body table {
@@ -501,24 +501,76 @@ td .btn-excluir:hover {
     background: #f8f9fa;
 }
 
-/* ===== FORMULÁRIO EM SEGUNDO PLANO ===== */
-.formulario-secao {
-    background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
-    border: 1px solid #dee2e6;
-    position: relative;
-    z-index: 1;
-}
-
-/* Quando modal estiver aberto, diminuir opacidade do conteúdo principal */
-body.modal-aberto .container {
-    opacity: 0.4;
+/* ===== CORREÇÃO: MODAL FORA DO DESFOQUE ===== */
+/* Apenas o conteúdo principal fica desfocado, NÃO o modal */
+body.modal-aberto .container:not(.modal *) {
+    opacity: 0.3;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    filter: blur(2px);
+    transition: all 0.3s ease;
 }
 
-/* Adicionar classe quando modal estiver aberto */
+/* O modal NÃO está dentro do .container no efeito de desfoque */
 body.modal-aberto {
-    overflow: hidden;
+    position: relative;
+}
+
+/* Overlay escuro atrás do modal */
+body.modal-aberto::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    pointer-events: none;
+}
+
+/* O modal PRECISA estar FORA da cadeia do .container */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999 !important;
+    display: none;
+}
+
+/* Conteúdo do modal SEMPRE acima de tudo */
+.modal-content {
+    position: relative;
+    z-index: 10000 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    animation: none !important;
+}
+
+/* Garantir que nada dentro do modal seja afetado pelo desfoque */
+.modal * {
+    opacity: 1 !important;
+    filter: none !important;
+    pointer-events: auto !important;
+}
+
+/* Se ainda estiver desfocado, force a remoção completa */
+#modalAlunos,
+#modalAlunos *,
+#modalEdicao,
+#modalEdicao * {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    animation: none !important;
+    pointer-events: auto !important;
+}
+
+/* ===== MODAL DE EDIÇÃO ESPECÍFICO ===== */
+#modalEdicao .modal-content {
+    max-width: 800px !important;
 }
 
 /* ===== FORMULÁRIO - ESTILO EVOLUCIONAL ===== */
@@ -1039,4 +1091,139 @@ footer {
     src: url('https://fonts.cdnfonts.com/css/museo-sans');
     font-weight: 700;
     font-style: normal;
+}
+/* ===== DESTAQUE PARA ALUNOS RELACIONADOS NO MODAL ===== */
+.alunos-relacionados-info {
+    background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 25px 30px;
+    border-radius: 16px;
+    border-left: 6px solid #060181;
+    margin-bottom: 30px;
+    border: 2px solid #dee2e6;
+    box-shadow: 0 4px 15px rgba(6, 1, 129, 0.1);
+}
+
+.alunos-relacionados-info p {
+    font-size: 20px;
+    color: #060181 !important;
+    font-weight: 700;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    position: static !important;
+}
+
+.alunos-relacionados-info i {
+    color: #f74a4b;
+    margin-right: 15px;
+    font-size: 24px;
+}
+
+.alunos-relacionados-info strong {
+    color: #060181 !important;
+    font-weight: 800;
+    font-family: 'Museo Sans', sans-serif;
+}
+
+#modalDegreeNome {
+    color: #f74a4b !important;
+    font-weight: 700;
+    font-size: 22px;
+    font-family: 'Museo Sans', sans-serif;
+}
+
+/* Tabela de alunos destacada */
+.alunos-relacionados-table {
+    border: 2px solid #060181 !important;
+    border-radius: 12px !important;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(6, 1, 129, 0.15) !important;
+}
+
+.alunos-relacionados-table thead {
+    background: linear-gradient(90deg, #060181 0%, #f74a4b 100%) !important;
+}
+
+.alunos-relacionados-table th {
+    background: transparent !important;
+    font-size: 18px !important;
+    padding: 22px 25px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.alunos-relacionados-table td {
+    padding: 20px 25px !important;
+    font-size: 16px;
+    font-weight: 500;
+    border-color: #e9ecef;
+}
+
+.alunos-relacionados-table tr:hover td {
+    background: #f0f5ff !important;
+}
+
+/* Container principal do modal com mais destaque */
+#modalAlunos .modal-content {
+    border: 3px solid #060181;
+    box-shadow: 0 30px 70px rgba(6, 1, 129, 0.3) !important;
+}
+
+/* Título do modal com gradiente */
+#modalAlunos .modal-header {
+    background: linear-gradient(90deg, #060181 0%, #f74a4b 100%) !important;
+}
+
+#modalAlunos .modal-header h3 {
+    font-size: 28px !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+#modalAlunos .modal-header h3 strong {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 8px 20px;
+    border-radius: 30px;
+    backdrop-filter: blur(10px);
+}
+
+/* ===== ANIMAÇÃO PARA MODAL DE ALUNOS ===== */
+@keyframes modalEntrada {
+    0% {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    70% {
+        transform: translateY(10px) scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-destaque {
+    animation: modalEntrada 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Badges estilizadas para alunos */
+.modal-body .class-badge {
+    background: linear-gradient(90deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #1565c0;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid #90caf9;
+    display: inline-block;
+}
+
+.modal-body .degree-badge {
+    background: linear-gradient(90deg, #f3e5f5 0%, #e1bee7 100%);
+    color: #7b1fa2;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid #ce93d8;
+    display: inline-block;
 }
